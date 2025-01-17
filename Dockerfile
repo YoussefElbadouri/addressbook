@@ -1,28 +1,32 @@
-# Étape 1 : Construction de l'application avec Maven
+# Stage 1: Build the application with Maven
 FROM maven:3.8.5-openjdk-17 AS build
 
-# Définir le répertoire de travail dans le conteneur
+# Set the working directory in the container
 WORKDIR /app
 
-# Copier le fichier pom.xml et télécharger les dépendances
+# Copy the pom.xml to download dependencies
 COPY pom.xml .
+
+# Download project dependencies
 RUN mvn dependency:go-offline -B
 
-# Copier tout le code source et construire le projet
+# Copy the entire project source
 COPY src ./src
+
+# Build the project and skip tests for faster builds
 RUN mvn package -DskipTests
 
-# Étape 2 : Création de l'image finale avec OpenJDK
+# Stage 2: Create the runtime image
 FROM openjdk:17-jdk-slim
 
-# Définir le répertoire de travail
+# Set the working directory
 WORKDIR /app
 
-# Copier le fichier JAR construit depuis l'étape précédente
-COPY --from=build /app/target/*.jar app.jar
+# Copy the built WAR file from the build stage
+COPY --from=build /app/target/*.war app.war
 
-# Exposer le port utilisé par l'application
+# Expose the port used by the application
 EXPOSE 8080
 
-# Démarrer l'application Java
-CMD ["java", "-jar", "app.jar"]
+# Command to run the application
+CMD ["java", "-jar", "app.war"]
